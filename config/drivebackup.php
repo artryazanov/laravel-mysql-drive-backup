@@ -45,6 +45,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Google Drive backup folder ID
+    |--------------------------------------------------------------------------
+    |
+    | Optional ID of the folder on Google Drive where backups are stored. When
+    | set, API requests will be limited to this folder for faster listing.
+    |
+    */
+    'drive_backup_folder_id' => env('GOOGLE_DRIVE_BACKUP_FOLDER_ID', null),
+
+    /*
+    |--------------------------------------------------------------------------
     | Backup file name on Google Drive
     |--------------------------------------------------------------------------
     |
@@ -64,6 +75,18 @@ return [
     |
     */
     'temp_file_path' => env('DB_BACKUP_TEMP_PATH', storage_path('app/mysql_backup_{timestamp}.sql')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Temporary directory for restore operations
+    |--------------------------------------------------------------------------
+    |
+    | Directory used to download and extract backup archives during restore.
+    | Ensure the application has write permissions. The directory is not
+    | cleaned automatically; manage lifecycle as needed.
+    |
+    */
+    'restore_temp_dir' => env('DB_RESTORE_TEMP_DIR', storage_path('app/drive-restore-temp')),
 
     /*
     |--------------------------------------------------------------------------
