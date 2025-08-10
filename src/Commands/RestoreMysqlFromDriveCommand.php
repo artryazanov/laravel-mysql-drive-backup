@@ -49,21 +49,23 @@ class RestoreMysqlFromDriveCommand extends Command
         $file = $this->findLatestDriveFileByMask($mask);
         if (! $file) {
             $this->error("File matching '{$mask}' not found on Google Drive.");
+
             return 1;
         }
         $this->line("Found: {$file['name']} (modified: {$file['modifiedTime']})");
 
         // 2) Download to temp directory
-        $localPath = $restoreDir . DIRECTORY_SEPARATOR . $file['name'];
+        $localPath = $restoreDir.DIRECTORY_SEPARATOR.$file['name'];
         $this->info('Downloading file from Google Drive...');
         $this->drive->downloadFileTo($file['id'], $localPath);
-        $this->line('Saved to: ' . $localPath);
+        $this->line('Saved to: '.$localPath);
 
         // 3) Prepare SQL files
         try {
             $sqlFiles = $this->prepareSqlFiles($localPath, $restoreDir);
         } catch (Exception $e) {
-            $this->error('Extraction error: ' . $e->getMessage());
+            $this->error('Extraction error: '.$e->getMessage());
+
             return 1;
         }
 
@@ -71,12 +73,14 @@ class RestoreMysqlFromDriveCommand extends Command
         try {
             $sqlFiles = $this->filterSqlByTables($sqlFiles, $only, $except, $restoreDir);
         } catch (Exception $e) {
-            $this->error('Table filtering error: ' . $e->getMessage());
+            $this->error('Table filtering error: '.$e->getMessage());
+
             return 1;
         }
 
         if (empty($sqlFiles)) {
             $this->warn('No SQL files left after filtering.');
+
             return 0;
         }
 
@@ -84,7 +88,8 @@ class RestoreMysqlFromDriveCommand extends Command
         try {
             $this->importSqlFiles($sqlFiles);
         } catch (Exception $e) {
-            $this->error('MySQL restore error: ' . $e->getMessage());
+            $this->error('MySQL restore error: '.$e->getMessage());
+
             return 1;
         }
 
@@ -105,6 +110,7 @@ class RestoreMysqlFromDriveCommand extends Command
         if (! $opt) {
             return [];
         }
+
         return array_values(array_filter(array_map('trim', explode(',', $opt)), fn ($s) => $s !== ''));
     }
 
@@ -139,7 +145,7 @@ class RestoreMysqlFromDriveCommand extends Command
         if ($ext === 'sql') {
             $sqlFiles[] = $localPath;
         } elseif ($ext === 'gz') {
-            $target = $restoreDir . DIRECTORY_SEPARATOR . basename($localPath, '.gz');
+            $target = $restoreDir.DIRECTORY_SEPARATOR.basename($localPath, '.gz');
             $this->gunzipTo($localPath, $target);
             $sqlFiles[] = $target;
         } elseif ($ext === 'zip') {
@@ -179,7 +185,7 @@ class RestoreMysqlFromDriveCommand extends Command
      */
     protected function unzipSqlFiles(string $zipPath, string $restoreDir): array
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($zipPath) !== true) {
             throw new Exception("Unable to open ZIP: {$zipPath}");
         }
@@ -188,7 +194,7 @@ class RestoreMysqlFromDriveCommand extends Command
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entry = $zip->getNameIndex($i);
             if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) === 'sql') {
-                $target = $restoreDir . DIRECTORY_SEPARATOR . basename($entry);
+                $target = $restoreDir.DIRECTORY_SEPARATOR.basename($entry);
                 copy("zip://{$zipPath}#{$entry}", $target);
                 $sqlFiles[] = $target;
             }
@@ -218,12 +224,13 @@ class RestoreMysqlFromDriveCommand extends Command
         }
 
         $src = $sqlFiles[0];
-        $dst = $restoreDir . DIRECTORY_SEPARATOR . 'filtered-' . basename($src);
+        $dst = $restoreDir.DIRECTORY_SEPARATOR.'filtered-'.basename($src);
 
         $this->filterSingleSqlFile($src, $dst, $only, $except);
 
         if (filesize($dst) === 0) {
             @unlink($dst);
+
             return [];
         }
 
@@ -257,6 +264,7 @@ class RestoreMysqlFromDriveCommand extends Command
         foreach ($select as $tbl) {
             $out[] = $map[$tbl];
         }
+
         return $out;
     }
 
@@ -296,6 +304,7 @@ class RestoreMysqlFromDriveCommand extends Command
             if (! empty($except) && $this->matchesAnyMask($table, $except)) {
                 return false;
             }
+
             return true;
         };
 
@@ -358,17 +367,17 @@ class RestoreMysqlFromDriveCommand extends Command
             throw new Exception('Only MySQL driver is supported.');
         }
 
-        $hostArg = $db['host'] ? '--host=' . escapeshellarg($db['host']) : '';
-        $portArg = $db['port'] ? '--port=' . escapeshellarg((string) $db['port']) : '';
-        $userArg = $db['username'] ? '--user=' . escapeshellarg($db['username']) : '';
+        $hostArg = $db['host'] ? '--host='.escapeshellarg($db['host']) : '';
+        $portArg = $db['port'] ? '--port='.escapeshellarg((string) $db['port']) : '';
+        $userArg = $db['username'] ? '--user='.escapeshellarg($db['username']) : '';
         $passArg = array_key_exists('password', $db)
-            ? '--password=' . escapeshellarg((string) $db['password'])
+            ? '--password='.escapeshellarg((string) $db['password'])
             : '--password=';
 
         foreach ($sqlFiles as $path) {
-            $this->info('Importing: ' . basename($path));
-            $cmd = "mysql {$hostArg} {$portArg} {$userArg} {$passArg} " . escapeshellarg((string) $db['database']) .
-                ' < ' . escapeshellarg($path) . ' 2>&1';
+            $this->info('Importing: '.basename($path));
+            $cmd = "mysql {$hostArg} {$portArg} {$userArg} {$passArg} ".escapeshellarg((string) $db['database']).
+                ' < '.escapeshellarg($path).' 2>&1';
             exec($cmd, $out, $code);
             if ($code !== 0) {
                 $msg = implode("\n", $out);
@@ -393,7 +402,8 @@ class RestoreMysqlFromDriveCommand extends Command
     {
         $escaped = preg_quote($mask, '#');
         $escaped = str_replace('\\*', '.*', $escaped);
-        return '#^' . $escaped . '$#i';
+
+        return '#^'.$escaped.'$#i';
     }
 
     protected function matchesAnyMask(string $name, array $masks): bool
@@ -404,6 +414,7 @@ class RestoreMysqlFromDriveCommand extends Command
                 return true;
             }
         }
+
         return false;
     }
 
@@ -415,7 +426,7 @@ class RestoreMysqlFromDriveCommand extends Command
                 $out[] = $n;
             }
         }
+
         return $out;
     }
 }
-

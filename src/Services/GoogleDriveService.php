@@ -20,7 +20,7 @@ class GoogleDriveService
     {
         $this->tokenFile = $tokenFile;
 
-        $this->client = new Client();
+        $this->client = new Client;
         $this->client->setClientId($clientId);
         $this->client->setClientSecret($clientSecret);
         if ($redirectUri) {
@@ -48,7 +48,7 @@ class GoogleDriveService
     {
         $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
         if (isset($token['error'])) {
-            throw new Exception('Google token error: ' . $token['error']);
+            throw new Exception('Google token error: '.$token['error']);
         }
         $this->client->setAccessToken($token);
         $this->saveTokenToFile($this->client->getAccessToken());
@@ -75,7 +75,7 @@ class GoogleDriveService
             }
             $new = $this->client->fetchAccessTokenWithRefreshToken($refresh);
             if (isset($new['error'])) {
-                throw new Exception('Failed to refresh access token: ' . $new['error']);
+                throw new Exception('Failed to refresh access token: '.$new['error']);
             }
             $this->saveTokenToFile($this->client->getAccessToken());
         }
@@ -85,6 +85,7 @@ class GoogleDriveService
      * List files (id, name, modifiedTime, mimeType) optionally within a folder.
      *
      * @return array<array{id:string, name:string, modifiedTime:string, mimeType:string}>
+     *
      * @throws Exception
      */
     public function listBackupFiles(?string $folderId = null): array
@@ -92,7 +93,7 @@ class GoogleDriveService
         $this->ensureAccessToken();
         $service = new Drive($this->client);
 
-        $query = "trashed = false";
+        $query = 'trashed = false';
         if ($folderId) {
             $query .= " and '{$folderId}' in parents";
         }
@@ -145,7 +146,7 @@ class GoogleDriveService
 
         $fh = fopen($destPath, 'w');
         if (! $fh) {
-            throw new Exception('Unable to open file for writing: ' . $destPath);
+            throw new Exception('Unable to open file for writing: '.$destPath);
         }
         while (! $body->eof()) {
             fwrite($fh, $body->read(1024 * 1024));
@@ -185,4 +186,3 @@ class GoogleDriveService
         @chmod($this->tokenFile, 0600);
     }
 }
-
