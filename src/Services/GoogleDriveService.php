@@ -2,17 +2,15 @@
 
 namespace Artryazanov\LaravelMysqlDriveBackup\Services;
 
+use Exception;
 use Google\Client;
 use Google\Service\Drive;
 use Google\Service\Drive\DriveFile;
-use Exception;
 
 class GoogleDriveService
 {
-    /** @var Client */
     protected Client $client;
 
-    /** @var string */
     protected string $tokenFile;
 
     /**
@@ -22,7 +20,7 @@ class GoogleDriveService
     {
         $this->tokenFile = $tokenFile;
 
-        $this->client = new Client();
+        $this->client = new Client;
         $this->client->setClientId($clientId);
         $this->client->setClientSecret($clientSecret);
         $this->client->setRedirectUri((string) config('drivebackup.redirect_uri'));
@@ -48,7 +46,7 @@ class GoogleDriveService
     {
         $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
         if (isset($token['error'])) {
-            throw new Exception('Error fetching Google OAuth token: ' . $token['error']);
+            throw new Exception('Error fetching Google OAuth token: '.$token['error']);
         }
         $this->client->setAccessToken($token);
         $this->saveTokenToFile($this->client->getAccessToken());
@@ -61,7 +59,7 @@ class GoogleDriveService
      */
     public function uploadFile(string $filePath, string $driveFileName): void
     {
-        if (!is_file($this->tokenFile)) {
+        if (! is_file($this->tokenFile)) {
             throw new Exception('Token file not found, authorization required.');
         }
         $saved = json_decode((string) file_get_contents($this->tokenFile), true) ?: [];
@@ -71,7 +69,7 @@ class GoogleDriveService
             if ($this->client->getRefreshToken()) {
                 $newToken = $this->client->fetchAccessTokenWithRefreshToken($this->client->getRefreshToken());
                 if (isset($newToken['error'])) {
-                    throw new Exception('Failed to refresh access token: ' . $newToken['error']);
+                    throw new Exception('Failed to refresh access token: '.$newToken['error']);
                 }
                 $this->saveTokenToFile($this->client->getAccessToken());
             } else {
@@ -101,11 +99,11 @@ class GoogleDriveService
     private function saveTokenToFile(array $tokenData): void
     {
         $dir = dirname($this->tokenFile);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             @mkdir($dir, 0700, true);
         }
         if (file_put_contents($this->tokenFile, json_encode($tokenData)) === false) {
-            throw new Exception('Unable to persist OAuth token to: ' . $this->tokenFile);
+            throw new Exception('Unable to persist OAuth token to: '.$this->tokenFile);
         }
     }
 }

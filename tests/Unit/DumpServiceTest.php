@@ -9,10 +9,11 @@ class DumpServiceTest extends TestCase
 {
     public function test_dump_creates_directory_and_file(): void
     {
-        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'backup_pkg_' . uniqid();
-        $dumpPath = $tempDir . DIRECTORY_SEPARATOR . 'dump.sql';
+        $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'backup_pkg_'.uniqid();
+        $dumpPath = $tempDir.DIRECTORY_SEPARATOR.'dump.sql';
 
-        $service = new class extends DumpService {
+        $service = new class extends DumpService
+        {
             protected function runCommand(string $command, array &$output, int &$resultCode): void
             {
                 $resultCode = 0;
@@ -41,19 +42,20 @@ class DumpServiceTest extends TestCase
             'prefix' => '',
         ]]);
 
-        $service = new DumpService();
+        $service = new DumpService;
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('not MySQL');
 
-        $service->dump(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'x.sql');
+        $service->dump(sys_get_temp_dir().DIRECTORY_SEPARATOR.'x.sql');
     }
 
     public function test_dump_throws_on_nonzero_exit(): void
     {
-        $dumpPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'x.sql';
+        $dumpPath = sys_get_temp_dir().DIRECTORY_SEPARATOR.'x.sql';
 
-        $service = new class extends DumpService {
+        $service = new class extends DumpService
+        {
             protected function runCommand(string $command, array &$output, int &$resultCode): void
             {
                 $resultCode = 2;
@@ -72,11 +74,13 @@ class DumpServiceTest extends TestCase
         // Configure two tables to exclude
         config(['drivebackup.exclude_tables' => ['jobs', 'failed_jobs']]);
 
-        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'backup_pkg_' . uniqid();
-        $dumpPath = $tempDir . DIRECTORY_SEPARATOR . 'dump.sql';
+        $tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'backup_pkg_'.uniqid();
+        $dumpPath = $tempDir.DIRECTORY_SEPARATOR.'dump.sql';
 
-        $service = new class extends DumpService {
+        $service = new class extends DumpService
+        {
             public string $lastCommand = '';
+
             protected function runCommand(string $command, array &$output, int &$resultCode): void
             {
                 $this->lastCommand = $command;

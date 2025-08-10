@@ -21,14 +21,15 @@ class DumpService
     /**
      * Create a dump of the current MySQL database and save it to the given file path.
      *
-     * @param string $path Absolute path to the .sql file to write.
+     * @param  string  $path  Absolute path to the .sql file to write.
+     *
      * @throws \RuntimeException If mysqldump fails.
      */
     public function createBackup(string $path): void
     {
         $directory = \dirname($path);
-        if (!is_dir($directory)) {
-            if (!@mkdir($directory, 0777, true) && !is_dir($directory)) {
+        if (! is_dir($directory)) {
+            if (! @mkdir($directory, 0777, true) && ! is_dir($directory)) {
                 throw new \RuntimeException("Failed to create directory: {$directory}");
             }
         }
@@ -50,21 +51,21 @@ class DumpService
             throw new \RuntimeException('Database name is empty. Please configure database.connections.{default}.database');
         }
 
-        $hostArg = $host !== '' ? '--host=' . escapeshellarg($host) : '';
-        $portArg = $port !== '' ? '--port=' . escapeshellarg($port) : '';
-        $userArg = $username !== '' ? '--user=' . escapeshellarg($username) : '';
-        $passArg = ($password !== '') ? '--password=' . escapeshellarg($password) : '--password='; // avoid interactive prompt
+        $hostArg = $host !== '' ? '--host='.escapeshellarg($host) : '';
+        $portArg = $port !== '' ? '--port='.escapeshellarg($port) : '';
+        $userArg = $username !== '' ? '--user='.escapeshellarg($username) : '';
+        $passArg = ($password !== '') ? '--password='.escapeshellarg($password) : '--password='; // avoid interactive prompt
         $dbArg = escapeshellarg($database);
         $outFileArg = escapeshellarg($path);
 
         // Build --ignore-table arguments from config
         $ignoreArgs = [];
         $excludeTables = config('drivebackup.exclude_tables');
-        if (is_array($excludeTables) && !empty($excludeTables)) {
+        if (is_array($excludeTables) && ! empty($excludeTables)) {
             foreach ($excludeTables as $table) {
                 $table = trim((string) $table);
                 if ($table !== '') {
-                    $ignoreArgs[] = '--ignore-table=' . escapeshellarg($database . '.' . $table);
+                    $ignoreArgs[] = '--ignore-table='.escapeshellarg($database.'.'.$table);
                 }
             }
         }
@@ -79,23 +80,21 @@ class DumpService
 
         if ($resultCode !== 0) {
             $message = "mysqldump failed with code {$resultCode}";
-            if (!empty($output)) {
-                $message .= ': ' . implode(' ', $output);
+            if (! empty($output)) {
+                $message .= ': '.implode(' ', $output);
             }
             throw new \RuntimeException($message);
         }
 
-        if (!is_file($path)) {
-            throw new \RuntimeException('Dump file was not created: ' . $path);
+        if (! is_file($path)) {
+            throw new \RuntimeException('Dump file was not created: '.$path);
         }
     }
 
     /**
      * Wrapper around exec() to allow tests to override execution.
      *
-     * @param string $command
-     * @param array<int,string> $output
-     * @param int $resultCode
+     * @param  array<int,string>  $output
      */
     protected function runCommand(string $command, array &$output, int &$resultCode): void
     {
