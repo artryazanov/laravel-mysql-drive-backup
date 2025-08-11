@@ -17,14 +17,19 @@ class CleanupDriveBackupsCommandTest extends TestCase
 
         config(['drivebackup.backup_file_name' => 'backup_{timestamp}.sql']);
 
-        $service = new class extends GoogleDriveService {
+        $service = new class extends GoogleDriveService
+        {
             public array $files = [];
+
             public array $deleted = [];
+
             public function __construct() {}
+
             public function listBackupFiles(?string $folderId = null): array
             {
                 return $this->files;
             }
+
             public function deleteFile(string $fileId): void
             {
                 $this->deleted[] = $fileId;
@@ -56,4 +61,3 @@ class CleanupDriveBackupsCommandTest extends TestCase
         $this->assertSame(['1', '6', '10', '12'], $service->deleted);
     }
 }
-

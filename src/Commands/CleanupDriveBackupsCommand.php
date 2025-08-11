@@ -192,4 +192,3 @@ class CleanupDriveBackupsCommand extends Command
         return '#^'.$regex.'$#';
     }
 }
-
