@@ -14,6 +14,8 @@ class ProviderTest extends TestCase
         $this->assertIsString(config('drivebackup.client_secret'));
         $this->assertIsString(config('drivebackup.token_file'));
         $this->assertIsString(config('drivebackup.temp_file_path'));
+        $this->assertIsString(config('drivebackup.restore_temp_dir'));
+        $this->assertNull(config('drivebackup.drive_backup_folder_id'));
         $this->assertTrue(filter_var(config('drivebackup.compress'), FILTER_VALIDATE_BOOL));
         $this->assertIsArray(config('drivebackup.exclude_tables'));
     }
@@ -23,5 +25,6 @@ class ProviderTest extends TestCase
         $commands = Artisan::all();
         $this->assertArrayHasKey('backup:mysql-to-drive', $commands);
         $this->assertArrayHasKey('backup:authorize-drive', $commands);
+        $this->assertArrayHasKey('backup:restore-mysql', $commands);
     }
 }
