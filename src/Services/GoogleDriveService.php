@@ -173,6 +173,18 @@ class GoogleDriveService
     }
 
     /**
+     * Delete file from Google Drive by its ID.
+     *
+     * @throws Exception
+     */
+    public function deleteFile(string $fileId): void
+    {
+        $this->ensureAccessToken();
+        $drive = new Drive($this->client);
+        $drive->files->delete($fileId);
+    }
+
+    /**
      * Persist OAuth token to file.
      */
     private function saveTokenToFile(array $token): void
