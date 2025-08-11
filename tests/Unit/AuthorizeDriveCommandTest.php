@@ -13,11 +13,21 @@ class AuthorizeDriveCommandTest extends TestCase
 {
     public function test_manual_paste_stores_token(): void
     {
-        $drive = new class extends GoogleDriveService {
+        $drive = new class extends GoogleDriveService
+        {
             public ?string $saved = null;
+
             public function __construct() {}
-            public function getAuthUrl(): string { return 'http://example.com/auth'; }
-            public function storeAuthToken(string $authCode): void { $this->saved = $authCode; }
+
+            public function getAuthUrl(): string
+            {
+                return 'http://example.com/auth';
+            }
+
+            public function storeAuthToken(string $authCode): void
+            {
+                $this->saved = $authCode;
+            }
         };
         $this->app->instance(GoogleDriveService::class, $drive);
 
@@ -33,10 +43,19 @@ class AuthorizeDriveCommandTest extends TestCase
 
     public function test_returns_error_when_storing_token_fails(): void
     {
-        $drive = new class extends GoogleDriveService {
+        $drive = new class extends GoogleDriveService
+        {
             public function __construct() {}
-            public function getAuthUrl(): string { return 'http://auth'; }
-            public function storeAuthToken(string $authCode): void { throw new Exception('boom'); }
+
+            public function getAuthUrl(): string
+            {
+                return 'http://auth';
+            }
+
+            public function storeAuthToken(string $authCode): void
+            {
+                throw new Exception('boom');
+            }
         };
         $this->app->instance(GoogleDriveService::class, $drive);
 
@@ -49,11 +68,21 @@ class AuthorizeDriveCommandTest extends TestCase
 
     public function test_prompts_to_complete_flow_in_browser_when_not_manual(): void
     {
-        $drive = new class extends GoogleDriveService {
+        $drive = new class extends GoogleDriveService
+        {
             public bool $called = false;
+
             public function __construct() {}
-            public function getAuthUrl(): string { return 'http://auth'; }
-            public function storeAuthToken(string $authCode): void { $this->called = true; }
+
+            public function getAuthUrl(): string
+            {
+                return 'http://auth';
+            }
+
+            public function storeAuthToken(string $authCode): void
+            {
+                $this->called = true;
+            }
         };
         $this->app->instance(GoogleDriveService::class, $drive);
 
