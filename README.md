@@ -83,6 +83,12 @@ php artisan backup:restore-mysql "backup-*.zip" --only=users,orders
 php artisan backup:restore-mysql "nightly-*.sql" --except=log_*
 ```
 
+Remove outdated backups from Google Drive according to the retention policy:
+
+```bash
+php artisan backup:cleanup-drive
+```
+
 Backup command behaviour:
 1. The package creates a MySQL dump of the default connection (must be MySQL).
 2. The dump file is uploaded to Google Drive using OAuth2.
@@ -94,6 +100,7 @@ Add this to your `app/Console/Kernel.php` schedule method:
 
 ```php
 $schedule->command('backup:mysql-to-drive')->dailyAt('03:00');
+$schedule->command('backup:cleanup-drive')->dailyAt('04:00');
 ```
 
 ## Troubleshooting

@@ -4,6 +4,7 @@ namespace Artryazanov\LaravelMysqlDriveBackup;
 
 use Artryazanov\LaravelMysqlDriveBackup\Commands\AuthorizeDriveCommand;
 use Artryazanov\LaravelMysqlDriveBackup\Commands\BackupMysqlToDriveCommand;
+use Artryazanov\LaravelMysqlDriveBackup\Commands\CleanupDriveBackupsCommand;
 use Artryazanov\LaravelMysqlDriveBackup\Commands\RestoreMysqlFromDriveCommand;
 use Artryazanov\LaravelMysqlDriveBackup\Services\DumpService;
 use Artryazanov\LaravelMysqlDriveBackup\Services\GoogleDriveService;
@@ -52,6 +53,7 @@ class DriveBackupServiceProvider extends ServiceProvider
                 BackupMysqlToDriveCommand::class,
                 AuthorizeDriveCommand::class,
                 RestoreMysqlFromDriveCommand::class,
+                CleanupDriveBackupsCommand::class,
             ]);
         }
 
