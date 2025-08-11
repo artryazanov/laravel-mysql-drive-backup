@@ -1,6 +1,6 @@
 # Laravel MySQL Drive Backup (OAuth2)
 
-Laravel 12 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides two Artisan commands: one for authorization and one for backup. Suitable for manual runs and for scheduling via Laravel Scheduler.
+Laravel 12 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides Artisan commands for authorization, creating backups and restoring them from Drive. Suitable for manual runs and for scheduling via Laravel Scheduler.
 
 - Package name: `artryazanov/laravel-mysql-drive-backup`
 - License: Unlicense
@@ -29,8 +29,10 @@ Configuration file: `config/drivebackup.php`
 - client_secret: Google OAuth2 Client Secret (env GOOGLE_DRIVE_CLIENT_SECRET)
 - redirect_uri: Redirect URI registered in Google Cloud Console (env GOOGLE_DRIVE_REDIRECT_URI, default http://localhost:8000/google/drive/callback)
 - token_file: Path to the token JSON file (env GOOGLE_DRIVE_TOKEN_PATH, default storage/app/google_drive_token.json)
+- drive_backup_folder_id: Optional Drive folder ID where backups are stored (env GOOGLE_DRIVE_BACKUP_FOLDER_ID)
 - backup_file_name: File name to use on Google Drive (env DB_BACKUP_NAME, default mysql_backup_{timestamp}.sql). You can include {timestamp} placeholder which is replaced as YYYYMMDD-HHMMSS.
 - temp_file_path: Local temporary dump path (env DB_BACKUP_TEMP_PATH, default storage/app/mysql_backup_{timestamp}.sql). You can include {timestamp} placeholder which is replaced as YYYYMMDD-HHMMSS.
+- restore_temp_dir: Temporary directory for downloaded archives during restore (env DB_RESTORE_TEMP_DIR, default storage/app/drive-restore-temp)
 - compress: When true (default), gzip-compress the .sql dump before upload (env DB_BACKUP_COMPRESS, default true). If enabled and backup_file_name does not end with .gz, the uploaded name will have .gz appended.
 - exclude_tables: Array of table names to exclude from backup. Set via env DB_BACKUP_EXCLUDE_TABLES as a comma-separated list (e.g., "jobs,failed_jobs,sessions"). For each listed table, mysqldump will receive --ignore-table="{database}.{table}".
 
@@ -68,7 +70,20 @@ Run the backup command:
 php artisan backup:mysql-to-drive
 ```
 
-What happens:
+Restore a backup from Google Drive:
+
+```bash
+php artisan backup:restore-mysql "backup-*.sql.gz"
+```
+
+You may restrict tables during restore:
+
+```bash
+php artisan backup:restore-mysql "backup-*.zip" --only=users,orders
+php artisan backup:restore-mysql "nightly-*.sql" --except=log_*
+```
+
+Backup command behaviour:
 1. The package creates a MySQL dump of the default connection (must be MySQL).
 2. The dump file is uploaded to Google Drive using OAuth2.
 3. On success, the local dump file is removed.

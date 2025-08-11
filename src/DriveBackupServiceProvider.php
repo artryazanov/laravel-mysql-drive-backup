@@ -4,6 +4,7 @@ namespace Artryazanov\LaravelMysqlDriveBackup;
 
 use Artryazanov\LaravelMysqlDriveBackup\Commands\AuthorizeDriveCommand;
 use Artryazanov\LaravelMysqlDriveBackup\Commands\BackupMysqlToDriveCommand;
+use Artryazanov\LaravelMysqlDriveBackup\Commands\RestoreMysqlFromDriveCommand;
 use Artryazanov\LaravelMysqlDriveBackup\Services\DumpService;
 use Artryazanov\LaravelMysqlDriveBackup\Services\GoogleDriveService;
 use Illuminate\Support\ServiceProvider;
@@ -25,7 +26,8 @@ class DriveBackupServiceProvider extends ServiceProvider
             return new GoogleDriveService(
                 (string) ($config['client_id'] ?? ''),
                 (string) ($config['client_secret'] ?? ''),
-                (string) ($config['token_file'] ?? storage_path('app/google_drive_token.json'))
+                (string) ($config['token_file'] ?? storage_path('app/google_drive_token.json')),
+                $config['redirect_uri'] ?? null
             );
         });
 
@@ -49,6 +51,7 @@ class DriveBackupServiceProvider extends ServiceProvider
             $this->commands([
                 BackupMysqlToDriveCommand::class,
                 AuthorizeDriveCommand::class,
+                RestoreMysqlFromDriveCommand::class,
             ]);
         }
 
