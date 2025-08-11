@@ -35,16 +35,21 @@ class BackupMysqlToDriveCommandTest extends TestCase
             'drivebackup.compress' => true,
         ]);
 
-        $dumpService = new class extends DumpService {
+        $dumpService = new class extends DumpService
+        {
             public function __construct() {}
+
             public function createBackup(string $path): void
             {
                 file_put_contents($path, 'dummy');
             }
         };
-        $driveService = new class extends GoogleDriveService {
+        $driveService = new class extends GoogleDriveService
+        {
             public array $uploaded = [];
+
             public function __construct() {}
+
             public function uploadFile(string $path, string $name): void
             {
                 $this->uploaded = [$path, $name];
