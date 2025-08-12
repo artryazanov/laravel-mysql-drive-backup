@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use ZipArchive;
 
 /**
- * Restore MySQL database from a backup stored on Google Drive.
+ * Restore the MySQL database from a backup stored on Google Drive.
  *
  * Supports .sql, .gz and .zip files, optional table filtering via --only and
  * --except options with simple wildcard support (*).
