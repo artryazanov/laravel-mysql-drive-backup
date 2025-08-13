@@ -195,7 +195,30 @@ class RestoreMysqlFromDriveCommand extends Command
             $entry = $zip->getNameIndex($i);
             if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) === 'sql') {
                 $target = $restoreDir.DIRECTORY_SEPARATOR.basename($entry);
-                copy("zip://{$zipPath}#{$entry}", $target);
+
+                $stream = $zip->getStream($entry);
+                if ($stream === false) {
+                    $zip->close();
+                    throw new Exception("Unable to read ZIP entry: {$entry}");
+                }
+                $out = fopen($target, 'wb');
+                if (! $out) {
+                    fclose($stream);
+                    $zip->close();
+                    throw new Exception("Unable to create file: {$target}");
+                }
+                while (! feof($stream)) {
+                    $chunk = fread($stream, 1024 * 1024);
+                    if ($chunk === false) {
+                        break;
+                    }
+                    if ($chunk !== '') {
+                        fwrite($out, $chunk);
+                    }
+                }
+                fclose($stream);
+                fclose($out);
+
                 $sqlFiles[] = $target;
             }
         }
@@ -286,15 +309,7 @@ class RestoreMysqlFromDriveCommand extends Command
         }
 
         $current = null;
-        $write = true;
-        $buffer = [];
-
-        $flush = function () use (&$buffer, $out): void {
-            if (! empty($buffer)) {
-                fwrite($out, implode('', $buffer));
-                $buffer = [];
-            }
-        };
+        $allowed = true;
 
         $isAllowed = function (string $table) use ($only, $except): bool {
             $table = strtolower($table);
@@ -309,6 +324,7 @@ class RestoreMysqlFromDriveCommand extends Command
         };
 
         while (($line = fgets($in)) !== false) {
+            // Detect the start of a (possibly new) table block
             if (preg_match('/^-- Table structure for table `([^`]+)`/i', $line, $m)
                 || preg_match('/^DROP TABLE IF EXISTS `([^`]+)`/i', $line, $m)
                 || preg_match('/^CREATE TABLE `([^`]+)`/i', $line, $m)
@@ -317,37 +333,26 @@ class RestoreMysqlFromDriveCommand extends Command
 
                 $table = $m[1];
 
-                if ($current !== null && $current !== $table) {
-                    if ($write) {
-                        $flush();
-                    }
-                    $buffer = [];
-                }
-
+                // Switch current table context; previous table implicitly ends
                 $current = $table;
-                $write = $isAllowed($table);
+                $allowed = $isAllowed($table);
             }
 
             if ($current === null) {
+                // Outside of table-specific blocks: always keep
                 fwrite($out, $line);
             } else {
-                if ($write) {
-                    $buffer[] = $line;
+                // Inside a table block: write or skip line immediately to avoid buffering
+                if ($allowed) {
+                    fwrite($out, $line);
                 }
 
+                // End of table block (for dumps with LOCK/UNLOCK)
                 if (preg_match('/^UNLOCK TABLES;$/i', trim($line))) {
-                    if ($write) {
-                        $flush();
-                    }
-                    $buffer = [];
                     $current = null;
-                    $write = true;
+                    $allowed = true;
                 }
             }
-        }
-
-        if ($write) {
-            $flush();
         }
 
         fclose($in);
@@ -376,12 +381,12 @@ class RestoreMysqlFromDriveCommand extends Command
 
         foreach ($sqlFiles as $path) {
             $this->info('Importing: '.basename($path));
-            $cmd = "mysql --quick {$hostArg} {$portArg} {$userArg} {$passArg} ".escapeshellarg((string) $db['database']).
+            $cmd = "mysql {$hostArg} {$portArg} {$userArg} {$passArg} ".escapeshellarg((string) $db['database']).
                 ' < '.escapeshellarg($path).' 2>&1';
-            exec($cmd, $out, $code);
+            $code = 0;
+            passthru($cmd, $code);
             if ($code !== 0) {
-                $msg = implode("\n", $out);
-                throw new Exception("mysql exited with code {$code}: {$msg}");
+                throw new Exception("mysql exited with code {$code}.");
             }
         }
     }
