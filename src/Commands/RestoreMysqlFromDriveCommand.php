@@ -376,7 +376,7 @@ class RestoreMysqlFromDriveCommand extends Command
 
         foreach ($sqlFiles as $path) {
             $this->info('Importing: '.basename($path));
-            $cmd = "mysql {$hostArg} {$portArg} {$userArg} {$passArg} ".escapeshellarg((string) $db['database']).
+            $cmd = "mysql --quick {$hostArg} {$portArg} {$userArg} {$passArg} ".escapeshellarg((string) $db['database']).
                 ' < '.escapeshellarg($path).' 2>&1';
             exec($cmd, $out, $code);
             if ($code !== 0) {
