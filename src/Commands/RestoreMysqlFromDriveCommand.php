@@ -21,7 +21,8 @@ class RestoreMysqlFromDriveCommand extends Command
     protected $signature = 'backup:restore-mysql
         {mask : File name or mask (e.g. backup-*.sql|*.gz|*.zip)}
         {--only= : Comma-separated list of tables to restore (supports * wildcard)}
-        {--except= : Comma-separated list of tables to exclude (supports * wildcard)}';
+        {--except= : Comma-separated list of tables to exclude (supports * wildcard)}
+        {--keep-temp : Keep downloaded/extracted temporary files, skip cleanup at the end}';
 
     /**
      * {@inheritdoc}
@@ -95,7 +96,11 @@ class RestoreMysqlFromDriveCommand extends Command
 
         $this->info('Restore completed successfully.');
 
-        $this->cleanupTemp($restoreDir, $file['name']);
+        if (! $this->option('keep-temp')) {
+            $this->cleanupTemp($restoreDir, $file['name']);
+        } else {
+            $this->info('Skipping cleanup as per --keep-temp option.');
+        }
 
         return 0;
     }
@@ -292,7 +297,7 @@ class RestoreMysqlFromDriveCommand extends Command
     }
 
     /**
-     * Filter single big SQL file (mysqldump format) by table blocks.
+     * Filter a single big SQL file (mysqldump format) by table blocks.
      */
     protected function filterSingleSqlFile(string $src, string $dst, array $only, array $except): void
     {
@@ -339,10 +344,10 @@ class RestoreMysqlFromDriveCommand extends Command
             }
 
             if ($current === null) {
-                // Outside of table-specific blocks: always keep
+                // Outside table-specific blocks: always keep
                 fwrite($out, $line);
             } else {
-                // Inside a table block: write or skip line immediately to avoid buffering
+                // Inside a table block: write or skip a line immediately to avoid buffering
                 if ($allowed) {
                     fwrite($out, $line);
                 }
@@ -392,16 +397,73 @@ class RestoreMysqlFromDriveCommand extends Command
     }
 
     /**
-     * Remove temporary artifacts created during restore.
+     * Remove only temporary artifacts created during the current run.
+     *
+     * Uses the downloaded file name to infer which files to delete:
+     * - Always deletes the downloaded file itself.
+     * - If the downloaded file is .gz, also deletes the extracted .sql and its filtered variant.
+     * - If the downloaded file is .sql, deletes its filtered variant.
+     * - For other extensions, tries conservative filtered-* variants based on the full name and base name.
+     * The restore directory itself and unrelated files are preserved.
      */
     protected function cleanupTemp(string $restoreDir, string $downloadedFileName): void
     {
-        // Intentionally left blank; implement custom cleanup if needed.
-        // Users may want to keep files for inspection.
+        try {
+            if ($restoreDir === '' || !is_dir($restoreDir)) {
+                return;
+            }
+
+            $real = realpath($restoreDir) ?: $restoreDir;
+
+            // Safety guards: do not attempt to clean root directories
+            if ($real === DIRECTORY_SEPARATOR) {
+                $this->warn('Cleanup skipped: restore directory resolves to root.');
+                return;
+            }
+            // Windows root like C:\ or D:\
+            if (preg_match('#^[A-Za-z]:\\\\?$#', $real) === 1) {
+                $this->warn('Cleanup skipped: restore directory resolves to a drive root.');
+                return;
+            }
+
+            $this->line('Cleaning up current-run temporary files...');
+
+            $targets = [];
+            $sep = DIRECTORY_SEPARATOR;
+            $ext = strtolower(pathinfo($downloadedFileName, PATHINFO_EXTENSION));
+            $base = pathinfo($downloadedFileName, PATHINFO_FILENAME);
+
+            // Downloaded file itself
+            $targets[] = rtrim($real, $sep) . $sep . $downloadedFileName;
+
+            if ($ext === 'gz') {
+                // Extracted .sql (basename without .gz) and its filtered variant
+                $extracted = rtrim($real, $sep) . $sep . $base; // e.g., foo.sql
+                $targets[] = $extracted;
+                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $base;
+            } elseif ($ext === 'sql') {
+                // Filtered variant of the downloaded .sql
+                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $downloadedFileName;
+            } else {
+                // Conservative attempt for other types (e.g., unknown): try filtered variants
+                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $downloadedFileName;
+                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $base;
+            }
+
+            // Remove duplicates and delete files if they exist
+            $targets = array_values(array_unique($targets));
+            foreach ($targets as $path) {
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->warn('Cleanup failed: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Convert simple wildcard mask to regex.
+     * Convert a simple wildcard mask to regex.
      */
     protected function maskToRegex(string $mask): string
     {
@@ -411,6 +473,17 @@ class RestoreMysqlFromDriveCommand extends Command
         return '#^'.$escaped.'$#i';
     }
 
+    /**
+     * Check if the given name matches at least one wildcard mask.
+     *
+     * Notes:
+     * - Masks support * as a wildcard (zero or more characters).
+     * - Matching is case-insensitive.
+     *
+     * @param string $name Candidate string (e.g., table name)
+     * @param array<int,string> $masks List of masks like ["users", "log_*"]
+     * @return bool True when the name matches any of the masks.
+     */
     protected function matchesAnyMask(string $name, array $masks): bool
     {
         $name = strtolower($name);
@@ -423,6 +496,16 @@ class RestoreMysqlFromDriveCommand extends Command
         return false;
     }
 
+    /**
+     * Filter a list of candidate names by applying wildcard masks.
+     *
+     * Uses matchesAnyMask for each candidate. Matching is case-insensitive and
+     * supports * as a wildcard. When $masks is empty, returns an empty array.
+     *
+     * @param array<int,string> $candidates List of names (e.g., table names)
+     * @param array<int,string> $masks List of masks like ["users", "log_*"]
+     * @return array<int,string> Candidates that match at least one mask.
+     */
     protected function namesByMasks(array $candidates, array $masks): array
     {
         $out = [];

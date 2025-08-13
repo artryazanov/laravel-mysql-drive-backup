@@ -1,9 +1,18 @@
 # Laravel MySQL Drive Backup (OAuth2)
 
-Laravel 12 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides Artisan commands for authorization, creating backups and restoring them from Drive. Suitable for manual runs and for scheduling via Laravel Scheduler.
+Laravel 10-12 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides Artisan commands for authorization, creating backups, and restoring them from Drive (supports .sql, .gz, .zip and wildcard masks). Suitable for manual runs and for scheduling via Laravel Scheduler.
 
 - Package name: `artryazanov/laravel-mysql-drive-backup`
 - License: Unlicense
+
+## Requirements
+- PHP 8.2+
+- Laravel 10.x–12.x
+- MySQL client utilities installed and available in PATH:
+  - mysqldump (for backup)
+  - mysql (for restore)
+- PHP extensions: zip, zlib
+- Google OAuth2 credentials and configured redirect URI
 
 ## Installation
 
@@ -83,6 +92,18 @@ php artisan backup:restore-mysql "backup-*.zip" --only=users,orders
 php artisan backup:restore-mysql "nightly-*.sql" --except=log_*
 ```
 
+### Restore options and behavior
+- mask: File name or wildcard mask to search on Google Drive. The latest file by modifiedTime matching the mask is selected. Examples: `backup-*.sql`, `*.sql.gz`, `*.zip`.
+- Supported formats: `.sql`, `.gz` (gzip of a single .sql), `.zip` (one or more .sql files inside).
+- --only: Comma-separated table names or wildcard masks to include (e.g., `users,orders`, `log_*`).
+- --except: Comma-separated table names or wildcard masks to exclude.
+- --keep-temp: Keep downloaded/extracted temporary files and skip cleanup at the end.
+
+Cleanup by default: After a successful restore, the command removes only artifacts created during the current run in the restore temp directory (the directory itself remains). For example:
+- When restoring a `.gz` dump: removes the downloaded `.gz`, the extracted `.sql`, and the filtered variant if created.
+- When restoring a `.sql` dump: removes the downloaded `.sql` and its filtered variant if created.
+- For `.zip`: extracted .sql files are intentionally preserved because their names cannot be reliably inferred from the archive name. Cleanup removes the downloaded `.zip` and conservative `filtered-*` variants only; manage extracted files yourself if needed. Use `--keep-temp` to skip any cleanup entirely.
+
 Remove outdated backups from Google Drive according to the retention policy:
 
 ```bash
@@ -93,6 +114,17 @@ Backup command behaviour:
 1. The package creates a MySQL dump of the default connection (must be MySQL).
 2. The dump file is uploaded to Google Drive using OAuth2.
 3. On success, the local dump file is removed.
+
+## Large dumps and memory usage
+
+This package handles large backup files efficiently by streaming data instead of loading it into memory:
+- Downloads from Google Drive are streamed to disk in chunks.
+- .gz archives are decompressed with gzread() in chunks.
+- .zip archives are extracted via ZipArchive streams and written in chunks.
+- SQL filtering is performed line-by-line; allowed table blocks are written directly to the output file without buffering entire tables in memory.
+- MySQL import uses passthru, avoiding accumulation of child process output in PHP memory.
+
+This design keeps peak RAM usage low even for multi‑gigabyte dumps. Ensure there is enough free disk space in restore_temp_dir for temporary files during restore.
 
 ## Scheduling
 
