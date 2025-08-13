@@ -20,6 +20,7 @@ class RestoreCleanupTest extends TestCase
         $base = sys_get_temp_dir();
         $dir = $base.DIRECTORY_SEPARATOR.'restore-temp-'.bin2hex(random_bytes(6));
         mkdir($dir, 0777, true);
+
         return $dir;
     }
 
@@ -27,13 +28,14 @@ class RestoreCleanupTest extends TestCase
     {
         // Bind the original command class to a testable subclass overriding importSqlFiles (no-op)
         $this->app->bind(RestoreMysqlFromDriveCommand::class, function ($app) {
-            return new class($app->make(GoogleDriveService::class)) extends RestoreMysqlFromDriveCommand {
+            return new class($app->make(GoogleDriveService::class)) extends RestoreMysqlFromDriveCommand
+            {
                 protected function importSqlFiles(array $sqlFiles): void
                 {
                     // No-op in tests: avoid calling external mysql
                     foreach ($sqlFiles as $f) {
                         // Assert files exist before cleanup path
-                        if (!is_file($f)) {
+                        if (! is_file($f)) {
                             throw new \RuntimeException('Expected SQL file missing in test: '.$f);
                         }
                     }
@@ -57,7 +59,7 @@ class RestoreCleanupTest extends TestCase
                 'modifiedTime' => '2025-08-13T18:00:00Z',
             ],
         ]);
-        $mock->method('downloadFileTo')->willReturnCallback(function (string $fileId, string $destPath) use ($restoreDir) {
+        $mock->method('downloadFileTo')->willReturnCallback(function (string $fileId, string $destPath) {
             $sql = "-- MySQL dump\nCREATE TABLE `t1` (id int);\nINSERT INTO `t1` VALUES (1);\n";
             $gzData = gzencode($sql, 1);
             file_put_contents($destPath, $gzData);
