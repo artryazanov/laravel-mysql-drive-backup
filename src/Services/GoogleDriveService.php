@@ -4,6 +4,7 @@ namespace Artryazanov\LaravelMysqlDriveBackup\Services;
 
 use Exception;
 use Google\Client;
+use Google\Http\MediaFileUpload;
 use Google\Service\Drive;
 use Google\Service\Drive\DriveFile;
 
@@ -164,12 +165,52 @@ class GoogleDriveService
         $this->ensureAccessToken();
         $drive = new Drive($this->client);
 
-        $meta = new DriveFile(['name' => $driveFileName]);
-        $drive->files->create($meta, [
-            'data' => file_get_contents($filePath),
-            'mimeType' => 'application/octet-stream',
-            'uploadType' => 'multipart',
-        ]);
+        // Prepare file metadata
+        $fileMeta = new DriveFile(['name' => $driveFileName]);
+
+        // Enable deferred execution to obtain a request for resumable upload
+        $this->client->setDefer(true);
+
+        try {
+            // Initiate a creation request without providing data
+            $request = $drive->files->create($fileMeta);
+
+            // Configure chunk size (1 MB) and initialize MediaFileUpload for resumable upload
+            $chunkSizeBytes = 1 * 1024 * 1024; // 1 MB
+            $media = new MediaFileUpload(
+                $this->client,
+                $request,
+                'application/octet-stream',
+                null,
+                true,
+                $chunkSizeBytes
+            );
+
+            $fileSize = @filesize($filePath);
+            if ($fileSize !== false) {
+                $media->setFileSize($fileSize);
+            }
+
+            $handle = fopen($filePath, 'rb');
+            if ($handle === false) {
+                throw new Exception('Unable to open file for reading: ' . $filePath);
+            }
+
+            $status = false;
+            while ($status === false && !feof($handle)) {
+                $chunk = fread($handle, $chunkSizeBytes);
+                if ($chunk === false) {
+                    fclose($handle);
+                    throw new Exception('Error reading file: ' . $filePath);
+                }
+                $status = $media->nextChunk($chunk);
+            }
+
+            fclose($handle);
+        } finally {
+            // Always disable deferred mode
+            $this->client->setDefer(false);
+        }
     }
 
     /**
