@@ -409,7 +409,7 @@ class RestoreMysqlFromDriveCommand extends Command
     protected function cleanupTemp(string $restoreDir, string $downloadedFileName): void
     {
         try {
-            if ($restoreDir === '' || !is_dir($restoreDir)) {
+            if ($restoreDir === '' || ! is_dir($restoreDir)) {
                 return;
             }
 
@@ -418,11 +418,13 @@ class RestoreMysqlFromDriveCommand extends Command
             // Safety guards: do not attempt to clean root directories
             if ($real === DIRECTORY_SEPARATOR) {
                 $this->warn('Cleanup skipped: restore directory resolves to root.');
+
                 return;
             }
             // Windows root like C:\ or D:\
             if (preg_match('#^[A-Za-z]:\\\\?$#', $real) === 1) {
                 $this->warn('Cleanup skipped: restore directory resolves to a drive root.');
+
                 return;
             }
 
@@ -434,20 +436,20 @@ class RestoreMysqlFromDriveCommand extends Command
             $base = pathinfo($downloadedFileName, PATHINFO_FILENAME);
 
             // Downloaded file itself
-            $targets[] = rtrim($real, $sep) . $sep . $downloadedFileName;
+            $targets[] = rtrim($real, $sep).$sep.$downloadedFileName;
 
             if ($ext === 'gz') {
                 // Extracted .sql (basename without .gz) and its filtered variant
-                $extracted = rtrim($real, $sep) . $sep . $base; // e.g., foo.sql
+                $extracted = rtrim($real, $sep).$sep.$base; // e.g., foo.sql
                 $targets[] = $extracted;
-                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $base;
+                $targets[] = rtrim($real, $sep).$sep.'filtered-'.$base;
             } elseif ($ext === 'sql') {
                 // Filtered variant of the downloaded .sql
-                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $downloadedFileName;
+                $targets[] = rtrim($real, $sep).$sep.'filtered-'.$downloadedFileName;
             } else {
                 // Conservative attempt for other types (e.g., unknown): try filtered variants
-                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $downloadedFileName;
-                $targets[] = rtrim($real, $sep) . $sep . 'filtered-' . $base;
+                $targets[] = rtrim($real, $sep).$sep.'filtered-'.$downloadedFileName;
+                $targets[] = rtrim($real, $sep).$sep.'filtered-'.$base;
             }
 
             // Remove duplicates and delete files if they exist
@@ -458,7 +460,7 @@ class RestoreMysqlFromDriveCommand extends Command
                 }
             }
         } catch (\Throwable $e) {
-            $this->warn('Cleanup failed: ' . $e->getMessage());
+            $this->warn('Cleanup failed: '.$e->getMessage());
         }
     }
 
@@ -480,8 +482,8 @@ class RestoreMysqlFromDriveCommand extends Command
      * - Masks support * as a wildcard (zero or more characters).
      * - Matching is case-insensitive.
      *
-     * @param string $name Candidate string (e.g., table name)
-     * @param array<int,string> $masks List of masks like ["users", "log_*"]
+     * @param  string  $name  Candidate string (e.g., table name)
+     * @param  array<int,string>  $masks  List of masks like ["users", "log_*"]
      * @return bool True when the name matches any of the masks.
      */
     protected function matchesAnyMask(string $name, array $masks): bool
@@ -502,8 +504,8 @@ class RestoreMysqlFromDriveCommand extends Command
      * Uses matchesAnyMask for each candidate. Matching is case-insensitive and
      * supports * as a wildcard. When $masks is empty, returns an empty array.
      *
-     * @param array<int,string> $candidates List of names (e.g., table names)
-     * @param array<int,string> $masks List of masks like ["users", "log_*"]
+     * @param  array<int,string>  $candidates  List of names (e.g., table names)
+     * @param  array<int,string>  $masks  List of masks like ["users", "log_*"]
      * @return array<int,string> Candidates that match at least one mask.
      */
     protected function namesByMasks(array $candidates, array $masks): array
