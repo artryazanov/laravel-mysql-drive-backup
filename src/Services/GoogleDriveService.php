@@ -193,15 +193,15 @@ class GoogleDriveService
 
             $handle = fopen($filePath, 'rb');
             if ($handle === false) {
-                throw new Exception('Unable to open file for reading: ' . $filePath);
+                throw new Exception('Unable to open file for reading: '.$filePath);
             }
 
             $status = false;
-            while ($status === false && !feof($handle)) {
+            while ($status === false && ! feof($handle)) {
                 $chunk = fread($handle, $chunkSizeBytes);
                 if ($chunk === false) {
                     fclose($handle);
-                    throw new Exception('Error reading file: ' . $filePath);
+                    throw new Exception('Error reading file: '.$filePath);
                 }
                 $status = $media->nextChunk($chunk);
             }
