@@ -167,6 +167,11 @@ class GoogleDriveService
 
         // Prepare file metadata
         $fileMeta = new DriveFile(['name' => $driveFileName]);
+        // If a backup folder is configured, place the file into that folder
+        $folderId = (string) config('drivebackup.drive_backup_folder_id');
+        if ($folderId !== '') {
+            $fileMeta->setParents([$folderId]);
+        }
 
         // Enable deferred execution to obtain a request for resumable upload
         $this->client->setDefer(true);
