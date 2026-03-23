@@ -10,4 +10,7 @@ parameters:
     level: 5
 
     ignoreErrors:
+        -
+            message: '#Called .env. outside of the config directory#'
+            path: config/drivebackup.php
         # Ignore specific tricky errors if necessary

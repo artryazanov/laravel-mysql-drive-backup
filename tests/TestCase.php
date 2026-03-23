@@ -9,6 +9,11 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 abstract class TestCase extends BaseTestCase
 {
     /**
+     * @var mixed|null
+     */
+    public static $latestResponse = null;
+
+    /**
      * Get package providers.
      *
      * @param  Application  $app

@@ -186,7 +186,7 @@ class GoogleDriveService
                 $this->client,
                 $request,
                 'application/octet-stream',
-                null,
+                '',
                 true,
                 $chunkSizeBytes
             );
