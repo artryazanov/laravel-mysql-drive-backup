@@ -1,11 +1,15 @@
-# Laravel MySQL Drive Backup (OAuth2)
+# ☁️ Laravel MySQL Drive Backup (OAuth2)
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/artryazanov/laravel-mysql-drive-backup.svg?style=flat-square)](https://packagist.org/packages/artryazanov/laravel-mysql-drive-backup)
+[![Tests](https://img.shields.io/github/actions/workflow/status/artryazanov/laravel-mysql-drive-backup/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/artryazanov/laravel-mysql-drive-backup/actions/workflows/tests.yml)
+[![Lint](https://img.shields.io/github/actions/workflow/status/artryazanov/laravel-mysql-drive-backup/lint.yml?branch=main&label=lint&style=flat-square)](https://github.com/artryazanov/laravel-mysql-drive-backup/actions/workflows/lint.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/artryazanov/laravel-mysql-drive-backup.svg?style=flat-square)](https://codecov.io/gh/artryazanov/laravel-mysql-drive-backup)
+[![Total Downloads](https://img.shields.io/packagist/dt/artryazanov/laravel-mysql-drive-backup.svg?style=flat-square)](https://packagist.org/packages/artryazanov/laravel-mysql-drive-backup)
+[![License](https://img.shields.io/github/license/artryazanov/laravel-mysql-drive-backup.svg?style=flat-square)](https://github.com/artryazanov/laravel-mysql-drive-backup/blob/main/LICENSE)
 
 Laravel 10-12 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides Artisan commands for authorization, creating backups, and restoring them from Drive (supports .sql, .gz, .zip and wildcard masks). Suitable for manual runs and for scheduling via Laravel Scheduler.
 
-- Package name: `artryazanov/laravel-mysql-drive-backup`
-- License: Unlicense
-
-## Requirements
+## 📋 Requirements
 - PHP 8.2+
 - Laravel 10.x–12.x
 - MySQL client utilities installed and available in PATH:
@@ -14,17 +18,17 @@ Laravel 10-12 package to back up a MySQL database and upload the dump to Google 
 - PHP extensions: zip, zlib
 - Google OAuth2 credentials and configured redirect URI
 
-## Installation
+## 📦 Installation
 
-Add the repository path in your root composer.json (already present in this project) and require the package:
+You can install the package via composer:
 
 ```bash
-composer require artryazanov/laravel-mysql-drive-backup:dev-main
+composer require artryazanov/laravel-mysql-drive-backup
 ```
 
 Laravel auto-discovers the service provider. No manual registration is needed.
 
-## Configuration
+## ⚙️ Configuration
 
 Publish the configuration to customize defaults:
 
@@ -45,18 +49,44 @@ Configuration file: `config/drivebackup.php`
 - compress: When true (default), gzip-compress the .sql dump before upload (env DB_BACKUP_COMPRESS, default true). If enabled and backup_file_name does not end with .gz, the uploaded name will have .gz appended.
 - exclude_tables: Array of table names to exclude from backup. Set via env DB_BACKUP_EXCLUDE_TABLES as a comma-separated list (e.g., "jobs,failed_jobs,sessions"). For each listed table, mysqldump will receive --ignore-table="{database}.{table}".
 
-## Google Drive OAuth2 Authorization
+## 🔐 Google Drive OAuth2 Authorization
 
-1. In Google Cloud Console, create OAuth2 credentials (Web application) and add your Authorized redirect URI exactly matching config('drivebackup.redirect_uri') (e.g. http://localhost:8000/google/drive/callback).
-2. Set env vars in your .env:
+### 1. Obtaining Google Drive API Credentials
 
-```
-GOOGLE_DRIVE_CLIENT_ID=...
-GOOGLE_DRIVE_CLIENT_SECRET=...
+To use this package, you need to create an OAuth2 application in the Google Cloud Console and obtain a Client ID and Client Secret.
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project or select an existing one.
+3. **Enable the Google Drive API**:
+   - Navigate to **APIs & Services** > **Library**.
+   - Search for **Google Drive API** and click **Enable**.
+4. **Configure the OAuth Consent Screen**:
+   - Navigate to **APIs & Services** > **OAuth consent screen**.
+   - Choose **External** (or Internal if using a Google Workspace) and click **Create**.
+   - Fill in the required primary fields (App name, User support email, Developer contact information) and click Save and Continue through the steps.
+   - *Note: If your application publishing status is "Testing", you MUST add the Google account you will use for backups to the **Test users** list. Otherwise, authorization will fail.*
+5. **Create Credentials**:
+   - Navigate to **APIs & Services** > **Credentials**.
+   - Click **Create Credentials** > **OAuth client ID**.
+   - Select **Web application** as the Application type.
+   - Name your OAuth client (e.g., "Laravel Drive Backup").
+   - Under **Authorized redirect URIs**, add your application's callback URL. This must exactly match your `GOOGLE_DRIVE_REDIRECT_URI` value (e.g., `http://localhost:8000/google/drive/callback` for local development or `https://your-domain.com/google/drive/callback` for production).
+   - Click **Create**.
+6. A dialog will appear with your **Client ID** and **Client Secret**.
+
+### 2. Environment Configuration
+
+Add the obtained credentials and redirect URI to your `.env` file:
+
+```env
+GOOGLE_DRIVE_CLIENT_ID=your-client-id...
+GOOGLE_DRIVE_CLIENT_SECRET=your-client-secret...
 GOOGLE_DRIVE_REDIRECT_URI=http://localhost:8000/google/drive/callback
 ```
 
-3. Publish config and clear cache if needed:
+### 3. Application Setup
+
+Publish config and clear cache if needed:
 
 ```bash
 php artisan vendor:publish --tag=config
@@ -71,7 +101,7 @@ php artisan backup:authorize-drive
 
 Open the link, approve access; Google will redirect to your redirect_uri (/google/drive/callback). The package callback stores the token automatically. If you prefer to enter the code manually, confirm the prompt in the console and paste the value of the `code` parameter from the redirected URL.
 
-## Usage
+## 💻 Usage
 
 Run the backup command:
 
@@ -115,7 +145,7 @@ Backup command behaviour:
 2. The dump file is uploaded to Google Drive using OAuth2.
 3. On success, the local dump file is removed.
 
-## Large dumps and memory usage
+## 💾 Large dumps and memory usage
 
 This package handles large backup files efficiently by streaming data instead of loading it into memory:
 - Downloads from Google Drive are streamed to disk in chunks.
@@ -126,7 +156,7 @@ This package handles large backup files efficiently by streaming data instead of
 
 This design keeps peak RAM usage low even for multi‑gigabyte dumps. Ensure there is enough free disk space in restore_temp_dir for temporary files during restore.
 
-## Scheduling
+## ⏰ Scheduling
 
 Add this to your `app/Console/Kernel.php` schedule method:
 
@@ -135,16 +165,16 @@ $schedule->command('backup:mysql-to-drive')->dailyAt('03:00');
 $schedule->command('backup:cleanup-drive')->dailyAt('04:00');
 ```
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
 - mysqldump not found: Ensure `mysqldump` is installed and available in PATH on the server.
 - The default database connection is not MySQL: Configure Laravel DB to use a MySQL connection as default.
 - Token file not found: Run `php artisan backup:authorize-drive` first.
 
-## Security
+## 🛡️ Security
 
 Protect your token file and client secret. Do not commit secrets to version control.
 
-## License
+## 📄 License
 
-This package is released under the Unlicense. See LICENSE for details.
+This package is released under the MIT License. See [LICENSE](LICENSE) for details.

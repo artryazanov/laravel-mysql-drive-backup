@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - src/
+        - config/
+
+    # Level 5 is a good starting point for Larastan
+    level: 5
+
+    ignoreErrors:
+        # Ignore specific tricky errors if necessary

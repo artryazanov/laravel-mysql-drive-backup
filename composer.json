@@ -2,7 +2,7 @@
     "name": "artryazanov/laravel-mysql-drive-backup",
     "description": "Laravel 12 package providing Artisan commands to back up MySQL to Google Drive using OAuth2.",
     "type": "library",
-    "license": "Unlicense",
+    "license": "MIT",
     "require": {
         "php": "^8.2",
         "illuminate/support": "^10.0|^11.0|^12.0",
@@ -14,7 +14,8 @@
     "require-dev": {
         "orchestra/testbench": "^8.0|^9.0",
         "phpunit/phpunit": "^10.0",
-        "laravel/pint": "^1.24"
+        "laravel/pint": "^1.24",
+        "larastan/larastan": "^2.9|^3.0"
     },
     "autoload": {
         "psr-4": {
