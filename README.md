@@ -7,11 +7,11 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/artryazanov/laravel-mysql-drive-backup.svg?style=flat-square)](https://packagist.org/packages/artryazanov/laravel-mysql-drive-backup)
 [![License](https://img.shields.io/github/license/artryazanov/laravel-mysql-drive-backup.svg?style=flat-square)](https://github.com/artryazanov/laravel-mysql-drive-backup/blob/main/LICENSE)
 
-Laravel 10-12 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides Artisan commands for authorization, creating backups, and restoring them from Drive (supports .sql, .gz, .zip and wildcard masks). Suitable for manual runs and for scheduling via Laravel Scheduler.
+Laravel 10-13 package to back up a MySQL database and upload the dump to Google Drive using OAuth2 (user consent). Provides Artisan commands for authorization, creating backups, and restoring them from Drive (supports .sql, .gz, .zip and wildcard masks). Suitable for manual runs and for scheduling via Laravel Scheduler.
 
 ## 📋 Requirements
 - PHP 8.2+
-- Laravel 10.x–12.x
+- Laravel 10.x–13.x
 - MySQL client utilities installed and available in PATH:
   - mysqldump (for backup)
   - mysql (for restore)
